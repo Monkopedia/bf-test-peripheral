@@ -315,22 +315,26 @@ dsc_access_user_desc(uint16_t conn_handle, uint16_t attr_handle,
 /* ---- Notify/Indicate helpers (called from main.c) ---- */
 
 void
-gatt_svr_notify_tick(uint16_t conn_handle)
+gatt_svr_notify_char_d(uint16_t conn_handle)
 {
     if (conn_handle == BLE_HS_CONN_HANDLE_NONE) {
         return;
     }
-
-    /* Char D: notify-only */
     notify_counter++;
     struct os_mbuf *om = ble_hs_mbuf_from_flat(&notify_counter, sizeof(notify_counter));
     if (om) {
         ble_gatts_notify_custom(conn_handle, bf_notify_chr_handle, om);
     }
+}
 
-    /* Char H: notify+indicate (sends via notify; client can also subscribe to indicate) */
+void
+gatt_svr_notify_char_h(uint16_t conn_handle)
+{
+    if (conn_handle == BLE_HS_CONN_HANDLE_NONE) {
+        return;
+    }
     notify_indicate_counter++;
-    om = ble_hs_mbuf_from_flat(&notify_indicate_counter, sizeof(notify_indicate_counter));
+    struct os_mbuf *om = ble_hs_mbuf_from_flat(&notify_indicate_counter, sizeof(notify_indicate_counter));
     if (om) {
         ble_gatts_notify_custom(conn_handle, bf_notify_indicate_chr_handle, om);
     }

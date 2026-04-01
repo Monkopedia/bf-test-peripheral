@@ -120,10 +120,17 @@ gap_event(struct ble_gap_event *event, void *arg)
                  event->subscribe.cur_indicate);
         if (event->subscribe.attr_handle == bf_notify_chr_handle) {
             notify_enabled = event->subscribe.cur_notify;
+            /* Send an immediate value so clients don't wait for the next timer tick */
+            if (notify_enabled) {
+                gatt_svr_notify_char_d(conn_handle);
+            }
         }
         if (event->subscribe.attr_handle == bf_notify_indicate_chr_handle) {
             notify_indicate_enabled = event->subscribe.cur_notify ||
                                      event->subscribe.cur_indicate;
+            if (notify_indicate_enabled) {
+                gatt_svr_notify_char_h(conn_handle);
+            }
         }
         break;
 
@@ -157,8 +164,11 @@ gap_event(struct ble_gap_event *event, void *arg)
 static void
 notify_timer_cb(TimerHandle_t timer)
 {
-    if (notify_enabled || notify_indicate_enabled) {
-        gatt_svr_notify_tick(conn_handle);
+    if (notify_enabled) {
+        gatt_svr_notify_char_d(conn_handle);
+    }
+    if (notify_indicate_enabled) {
+        gatt_svr_notify_char_h(conn_handle);
     }
 }
 

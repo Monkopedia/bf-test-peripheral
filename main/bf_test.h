@@ -96,8 +96,11 @@ extern uint16_t bf_notify_indicate_chr_handle;
 /* Initialize the GATT server and register services. */
 int gatt_svr_init(void);
 
-/* Called from the notify timer to send a tick on Char D and Char H. */
-void gatt_svr_notify_tick(uint16_t conn_handle);
+/* Send a notification on Char D (notify-only counter). */
+void gatt_svr_notify_char_d(uint16_t conn_handle);
+
+/* Send a notification on Char H (notify+indicate counter). */
+void gatt_svr_notify_char_h(uint16_t conn_handle);
 
 /* Called when Char B is written to echo via Char E indication. */
 void gatt_svr_indicate_echo(uint16_t conn_handle, const uint8_t *data, uint16_t len);
