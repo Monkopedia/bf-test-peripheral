@@ -33,6 +33,10 @@ uint16_t bf_notify_chr_handle;
 /* Char E: indicate handle */
 uint16_t bf_indicate_chr_handle;
 
+/* Char H: notify+indicate counter */
+static uint8_t notify_indicate_counter = 0;
+uint16_t bf_notify_indicate_chr_handle;
+
 /* Char F: read/write with descriptors */
 static uint8_t desc_chr_buf[512];
 static uint16_t desc_chr_len = 0;
@@ -78,6 +82,7 @@ static const ble_uuid128_t bf_chr_write_nr_uuid = BF_CHR_WRITE_NR_UUID;
 static const ble_uuid128_t bf_chr_notify_uuid   = BF_CHR_NOTIFY_UUID;
 static const ble_uuid128_t bf_chr_indicate_uuid = BF_CHR_INDICATE_UUID;
 static const ble_uuid128_t bf_chr_desc_uuid     = BF_CHR_DESC_UUID;
+static const ble_uuid128_t bf_chr_ni_uuid       = BF_CHR_NOTIFY_INDICATE_UUID;
 static const ble_uuid128_t bf_secure_svc_uuid   = BF_SECURE_SVC_UUID;
 static const ble_uuid128_t bf_chr_secure_uuid   = BF_CHR_SECURE_UUID;
 
@@ -125,6 +130,13 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 .access_cb = chr_access_test_svc,
                 .descriptors = (struct ble_gatt_dsc_def *)bf_chr_desc_dscs,
                 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
+            },
+            {
+                /* Char H: Notify + Indicate */
+                .uuid = &bf_chr_ni_uuid.u,
+                .access_cb = chr_access_test_svc,
+                .val_handle = &bf_notify_indicate_chr_handle,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_INDICATE,
             },
             { 0 } /* sentinel */
         },
@@ -226,6 +238,16 @@ chr_access_test_svc(uint16_t conn_handle, uint16_t attr_handle,
         return BLE_ATT_ERR_UNLIKELY;
     }
 
+    /* Char H: notify+indicate (readable for current counter) */
+    if (ble_uuid_cmp(uuid, &bf_chr_ni_uuid.u) == 0) {
+        if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
+            rc = os_mbuf_append(ctxt->om, &notify_indicate_counter,
+                                sizeof(notify_indicate_counter));
+            return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+
     /* Char F: read/write with descriptors */
     if (ble_uuid_cmp(uuid, &bf_chr_desc_uuid.u) == 0) {
         if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
@@ -298,10 +320,19 @@ gatt_svr_notify_tick(uint16_t conn_handle)
     if (conn_handle == BLE_HS_CONN_HANDLE_NONE) {
         return;
     }
+
+    /* Char D: notify-only */
     notify_counter++;
     struct os_mbuf *om = ble_hs_mbuf_from_flat(&notify_counter, sizeof(notify_counter));
     if (om) {
         ble_gatts_notify_custom(conn_handle, bf_notify_chr_handle, om);
+    }
+
+    /* Char H: notify+indicate (sends via notify; client can also subscribe to indicate) */
+    notify_indicate_counter++;
+    om = ble_hs_mbuf_from_flat(&notify_indicate_counter, sizeof(notify_indicate_counter));
+    if (om) {
+        ble_gatts_notify_custom(conn_handle, bf_notify_indicate_chr_handle, om);
     }
 }
 

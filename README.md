@@ -18,12 +18,17 @@ The firmware exposes two services covering the blue-falcon API surface:
 | D    | `BFA4`     | Read, Notify        | Ticks a counter every 1 second       |
 | E    | `BFA5`     | Read, Indicate      | Echoes writes to Char B              |
 | F    | `BFA6`     | Read, Write + Desc  | Has a writable User Description descriptor (0x2901) |
+| H    | `BFA7`     | Read, Notify, Indicate | Ticks counter every 1s; supports both notify and indicate |
 
 ### Service 2: BF Secure Service (`0000BF20-...`)
 
 | Char | UUID       | Properties          | Purpose                              |
 |------|------------|---------------------|--------------------------------------|
 | G    | `BFB1`     | Read (encrypted)    | Forces pairing before read succeeds  |
+
+### L2CAP CoC Echo Server
+
+Listens on **PSM 0x0080**. Echoes any received data back to the client.
 
 ### Advertising
 
@@ -44,9 +49,11 @@ The firmware exposes two services covering the blue-falcon API surface:
 | `writeCharacteristicWithoutEncoding` | Char C (write-no-response) |
 | `notifyCharacteristic`       | Char D (1s counter) |
 | `indicateCharacteristic`     | Char E (echoes Char B writes) |
+| `notifyAndIndicateCharacteristic` | Char H (supports both) |
 | `readDescriptor` / `writeDescriptor` | Char F's User Description |
 | `createBond`                 | Char G (requires encryption) |
 | `changeMTU` / `didUpdateMTU` | MTU negotiation at connect time |
+| `openL2capChannel` / `didOpenL2capChannel` | L2CAP CoC on PSM 0x0080 |
 
 ## Hardware
 

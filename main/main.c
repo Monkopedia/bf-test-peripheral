@@ -24,6 +24,7 @@ static const char *DEVICE_NAME = "BF-Test";
 
 static uint16_t conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static bool notify_enabled = false;
+static bool notify_indicate_enabled = false;
 static TimerHandle_t notify_timer;
 
 /* Forward declarations */
@@ -108,6 +109,7 @@ gap_event(struct ble_gap_event *event, void *arg)
         ESP_LOGI(TAG, "Disconnected (reason=%d)", event->disconnect.reason);
         conn_handle = BLE_HS_CONN_HANDLE_NONE;
         notify_enabled = false;
+        notify_indicate_enabled = false;
         start_advertise();
         break;
 
@@ -118,6 +120,10 @@ gap_event(struct ble_gap_event *event, void *arg)
                  event->subscribe.cur_indicate);
         if (event->subscribe.attr_handle == bf_notify_chr_handle) {
             notify_enabled = event->subscribe.cur_notify;
+        }
+        if (event->subscribe.attr_handle == bf_notify_indicate_chr_handle) {
+            notify_indicate_enabled = event->subscribe.cur_notify ||
+                                     event->subscribe.cur_indicate;
         }
         break;
 
@@ -151,7 +157,7 @@ gap_event(struct ble_gap_event *event, void *arg)
 static void
 notify_timer_cb(TimerHandle_t timer)
 {
-    if (notify_enabled) {
+    if (notify_enabled || notify_indicate_enabled) {
         gatt_svr_notify_tick(conn_handle);
     }
 }
@@ -233,6 +239,9 @@ app_main(void)
     /* Initialize GATT services */
     rc = gatt_svr_init();
     assert(rc == 0);
+
+    /* Initialize L2CAP CoC echo server */
+    l2cap_svr_init();
 
     /* Create 1-second notify timer */
     notify_timer = xTimerCreate("notify", pdMS_TO_TICKS(1000), pdTRUE,
