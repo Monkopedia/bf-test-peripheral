@@ -51,10 +51,9 @@ l2cap_event(struct ble_l2cap_event *event, void *arg)
             ESP_LOGE(TAG, "L2CAP accept: out of SDU buffers");
             return BLE_HS_ENOMEM;
         }
-        event->accept.conn_handle; /* just for logging */
-        event->accept.peer_sdu_size; /* remote's max SDU */
         ble_l2cap_recv_ready(event->accept.chan, sdu);
-        ESP_LOGI(TAG, "L2CAP CoC accepted (peer_sdu=%d)",
+        ESP_LOGI(TAG, "L2CAP CoC accepted (conn=%d, peer_sdu=%d)",
+                 event->accept.conn_handle,
                  event->accept.peer_sdu_size);
         return 0;
     }
