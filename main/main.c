@@ -17,6 +17,7 @@
 #include "host/ble_hs.h"
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
+#include "store/config/ble_store_config.h"
 #include "bf_test.h"
 
 static const char *TAG = "bf_main";
@@ -143,6 +144,21 @@ gap_event(struct ble_gap_event *event, void *arg)
         ESP_LOGI(TAG, "Encryption change: status=%d", event->enc_change.status);
         break;
 
+    case BLE_GAP_EVENT_PASSKEY_ACTION: {
+        ESP_LOGI(TAG, "Passkey action: action=%d",
+                 event->passkey.params.action);
+        struct ble_sm_io pkey = {0};
+        pkey.action = event->passkey.params.action;
+        if (pkey.action == BLE_SM_IOACT_NUMCMP) {
+            /* Numeric comparison — accept automatically for Just Works */
+            pkey.numcmp_accept = 1;
+        }
+        /* For BLE_SM_IOACT_NONE (Just Works), no response needed,
+           but we call inject_io anyway to be safe */
+        ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+        break;
+    }
+
     case BLE_GAP_EVENT_REPEAT_PAIRING: {
         /* Delete old bond and allow re-pairing */
         struct ble_gap_conn_desc desc;
@@ -241,6 +257,9 @@ app_main(void)
 
     /* Configure security */
     configure_security();
+
+    /* Initialize bond key storage */
+    ble_store_config_init();
 
     /* Set device name */
     rc = ble_svc_gap_device_name_set(DEVICE_NAME);
