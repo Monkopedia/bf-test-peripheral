@@ -17,7 +17,11 @@
 #include "host/ble_hs.h"
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
+#include "host/ble_store.h"
 #include "bf_test.h"
+
+/* Forward declaration — defined in NimBLE store config module */
+void ble_store_config_init(void);
 
 static const char *TAG = "bf_main";
 static const char *DEVICE_NAME = "BF-Test";
@@ -229,9 +233,9 @@ configure_security(void)
     ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO;
     ble_hs_cfg.sm_bonding = 1;
     ble_hs_cfg.sm_mitm = 0;
-    ble_hs_cfg.sm_sc = 0; /* Try legacy pairing first */
-    ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
-    ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
+    ble_hs_cfg.sm_sc = 1;
+    ble_hs_cfg.sm_our_key_dist |= BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
+    ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
 }
 
 /* ---- Entry point ---- */
@@ -256,13 +260,13 @@ app_main(void)
     /* Configure host callbacks */
     ble_hs_cfg.sync_cb = on_sync;
     ble_hs_cfg.reset_cb = on_reset;
+    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Configure security */
     configure_security();
 
-    ESP_LOGI(TAG, "Security config: io_cap=%d bonding=%d mitm=%d sc=%d",
-             ble_hs_cfg.sm_io_cap, ble_hs_cfg.sm_bonding,
-             ble_hs_cfg.sm_mitm, ble_hs_cfg.sm_sc);
+    /* Initialize bond key storage */
+    ble_store_config_init();
 
     /* Set device name */
     rc = ble_svc_gap_device_name_set(DEVICE_NAME);
