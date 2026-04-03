@@ -147,15 +147,13 @@ gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_PASSKEY_ACTION: {
         ESP_LOGI(TAG, "Passkey action: action=%d",
                  event->passkey.params.action);
-        struct ble_sm_io pkey = {0};
-        pkey.action = event->passkey.params.action;
-        if (pkey.action == BLE_SM_IOACT_NUMCMP) {
-            /* Numeric comparison — accept automatically for Just Works */
+        if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
+            struct ble_sm_io pkey = {0};
+            pkey.action = BLE_SM_IOACT_NUMCMP;
             pkey.numcmp_accept = 1;
+            ble_sm_inject_io(event->passkey.conn_handle, &pkey);
         }
-        /* For BLE_SM_IOACT_NONE (Just Works), no response needed,
-           but we call inject_io anyway to be safe */
-        ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+        /* For BLE_SM_IOACT_NONE (Just Works), no action needed */
         break;
     }
 
