@@ -260,6 +260,10 @@ app_main(void)
     /* Configure security */
     configure_security();
 
+    ESP_LOGI(TAG, "Security config: io_cap=%d bonding=%d mitm=%d sc=%d",
+             ble_hs_cfg.sm_io_cap, ble_hs_cfg.sm_bonding,
+             ble_hs_cfg.sm_mitm, ble_hs_cfg.sm_sc);
+
     /* Set device name */
     rc = ble_svc_gap_device_name_set(DEVICE_NAME);
     assert(rc == 0);
