@@ -105,6 +105,11 @@ gap_event(struct ble_gap_event *event, void *arg)
         }
         break;
 
+    case BLE_GAP_EVENT_PAIRING_COMPLETE:
+        ESP_LOGI(TAG, "Pairing complete: status=%d",
+                 event->pairing_complete.status);
+        break;
+
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI(TAG, "Disconnected (reason=%d)", event->disconnect.reason);
         conn_handle = BLE_HS_CONN_HANDLE_NONE;
