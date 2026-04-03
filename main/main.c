@@ -17,7 +17,6 @@
 #include "host/ble_hs.h"
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
-#include "store/config/ble_store_config.h"
 #include "bf_test.h"
 
 static const char *TAG = "bf_main";
@@ -255,9 +254,6 @@ app_main(void)
 
     /* Configure security */
     configure_security();
-
-    /* Initialize bond key storage */
-    ble_store_config_init();
 
     /* Set device name */
     rc = ble_svc_gap_device_name_set(DEVICE_NAME);
